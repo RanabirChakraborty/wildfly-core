@@ -88,34 +88,31 @@ class ManagedExplodedContentServitor implements Service {
     public void start(final StartContext context) throws StartException {
         final Path root = DeploymentHandlerUtil.getExplodedDeploymentRoot(serverEnvironmentSupplier.get(), managementName);
 
-        Runnable task = new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    CountDownLatch latch = asyncCleanup(root);
-                    if (latch != null) {
-                        try {
-                            if (!latch.await(60, TimeUnit.SECONDS)) {
-                                // TODO proper message
-                                context.failed(new StartException());
-                                return;
-                            }
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
+        Runnable task = () -> {
+            try {
+                CountDownLatch latch = asyncCleanup(root);
+                if (latch != null) {
+                    try {
+                        if (!latch.await(60, TimeUnit.SECONDS)) {
                             // TODO proper message
                             context.failed(new StartException());
                             return;
                         }
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        // TODO proper message
+                        context.failed(new StartException());
+                        return;
                     }
-
-                    Files.createDirectories(root.getParent());
-                    contentRepositorySupplier.get().copyExplodedContent(hash, root);
-                    deploymentRoot = root;
-                    virtualFileConsumer.accept(VFS.getChild(deploymentRoot.toAbsolutePath().toString()));
-                    context.complete();
-                } catch (IOException | ExplodedContentException e) {
-                    context.failed(new StartException(e));
                 }
+
+                Files.createDirectories(root.getParent());
+                contentRepositorySupplier.get().copyExplodedContent(hash, root);
+                deploymentRoot = root;
+                virtualFileConsumer.accept(VFS.getChild(deploymentRoot.toAbsolutePath().toString()));
+                context.complete();
+            } catch (IOException | ExplodedContentException e) {
+                context.failed(new StartException(e));
             }
         };
         try {
@@ -133,27 +130,24 @@ class ManagedExplodedContentServitor implements Service {
         deploymentRoot = null;
         if (theRoot != null) {
 
-            Runnable task = new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        virtualFileConsumer.accept(null);
-                        CountDownLatch latch = asyncCleanup(theRoot);
-                        if (latch != null) {
-                            try {
-                                if (!latch.await(60, TimeUnit.SECONDS)) {
-                                    // TODO log
-                                }
-                            } catch (InterruptedException e) {
-                                Thread.currentThread().interrupt();
+            Runnable task = () -> {
+                try {
+                    virtualFileConsumer.accept(null);
+                    CountDownLatch latch = asyncCleanup(theRoot);
+                    if (latch != null) {
+                        try {
+                            if (!latch.await(60, TimeUnit.SECONDS)) {
                                 // TODO log
                             }
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            // TODO log
                         }
-                    } catch (IOException e) {
-                        // TODO log
-                    } finally {
-                        context.complete();
                     }
+                } catch (IOException e) {
+                    // TODO log
+                } finally {
+                    context.complete();
                 }
             };
             try {
@@ -171,14 +165,11 @@ class ManagedExplodedContentServitor implements Service {
         final CountDownLatch result;
         if (root.toFile().exists()) {
             result = new CountDownLatch(1);
-            Runnable r = new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        recursiveDelete(root);
-                    } finally {
-                        result.countDown();
-                    }
+            Runnable r = () -> {
+                try {
+                    recursiveDelete(root);
+                } finally {
+                    result.countDown();
                 }
             };
             executorSupplier.get().submit(r);

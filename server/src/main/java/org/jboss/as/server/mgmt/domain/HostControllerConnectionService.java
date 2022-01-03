@@ -159,16 +159,13 @@ public class HostControllerConnectionService implements Service<HostControllerCl
     @Override
     public synchronized void stop(final StopContext stopContext) {
         final ExecutorService executorService = executorSupplier.get();
-        final Runnable task = new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    responseAttachmentSupport.shutdown();
-                } finally {
-                    StreamUtils.safeClose(client);
-                    client = null;
-                    stopContext.complete();
-                }
+        final Runnable task = () -> {
+            try {
+                responseAttachmentSupport.shutdown();
+            } finally {
+                StreamUtils.safeClose(client);
+                client = null;
+                stopContext.complete();
             }
         };
         try {

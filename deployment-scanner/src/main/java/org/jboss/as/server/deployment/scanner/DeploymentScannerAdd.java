@@ -105,7 +105,7 @@ class DeploymentScannerAdd implements OperationStepHandler {
 
             final String path = DeploymentScannerDefinition.PATH.resolveModelAttribute(context, operation).asString();
             final ModelNode relativeToNode = RELATIVE_TO.resolveModelAttribute(context, operation);
-            final String relativeTo = relativeToNode.isDefined() ?  relativeToNode.asString() : null;
+            final String relativeTo = relativeToNode.isDefined() ? relativeToNode.asString() : null;
             final boolean autoDeployZip = AUTO_DEPLOY_ZIPPED.resolveModelAttribute(context, operation).asBoolean();
             final boolean autoDeployExp = AUTO_DEPLOY_EXPLODED.resolveModelAttribute(context, operation).asBoolean();
             final boolean autoDeployXml = AUTO_DEPLOY_XML.resolveModelAttribute(context, operation).asBoolean();
@@ -151,16 +151,13 @@ class DeploymentScannerAdd implements OperationStepHandler {
                 final CountDownLatch deploymentDoneLatch = new CountDownLatch(1);
                 final DeploymentOperations deploymentOps = new BootTimeScannerDeployment(deploymentOperation, deploymentDoneLatch, deploymentResults, scanDoneLatch);
 
-                scheduledExecutorService.submit(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            bootTimeScanner.bootTimeScan(deploymentOps);
-                        } catch (Throwable t){
-                            DeploymentScannerLogger.ROOT_LOGGER.initialScanFailed(t);
-                        } finally {
-                            scanDoneLatch.countDown();
-                        }
+                scheduledExecutorService.submit(() -> {
+                    try {
+                        bootTimeScanner.bootTimeScan(deploymentOps);
+                    } catch (Throwable t) {
+                        DeploymentScannerLogger.ROOT_LOGGER.initialScanFailed(t);
+                    } finally {
+                        scanDoneLatch.countDown();
                     }
                 });
                 boolean interrupted = false;
@@ -240,8 +237,8 @@ class DeploymentScannerAdd implements OperationStepHandler {
     }
 
     static void performRuntime(final OperationContext context, ModelNode operation, ModelNode model,
-                                final ScheduledExecutorService executorService,
-                                final FileSystemDeploymentService bootTimeScanner) throws OperationFailedException {
+                               final ScheduledExecutorService executorService,
+                               final FileSystemDeploymentService bootTimeScanner) throws OperationFailedException {
         final PathAddress address = context.getCurrentAddress();
         final String path = DeploymentScannerDefinition.PATH.resolveModelAttribute(context, model).asString();
         final Boolean enabled = SCAN_ENABLED.resolveModelAttribute(context, model).asBoolean();

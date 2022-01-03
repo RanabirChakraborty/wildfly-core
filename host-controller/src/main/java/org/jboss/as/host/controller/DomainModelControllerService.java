@@ -542,14 +542,11 @@ public class DomainModelControllerService extends AbstractControllerService impl
 
         super.start(context);
 
-        pingScheduler.scheduleAtFixedRate(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    slaveHostRegistrations.pruneExpired();
-                } catch (Exception e) {
-                    HostControllerLogger.DOMAIN_LOGGER.debugf(e, "failed to execute eviction task");
-                }
+        pingScheduler.scheduleAtFixedRate(() -> {
+            try {
+                slaveHostRegistrations.pruneExpired();
+            } catch (Exception e) {
+                HostControllerLogger.DOMAIN_LOGGER.debugf(e, "failed to execute eviction task");
             }
         }, 1, 1, TimeUnit.MINUTES);
 

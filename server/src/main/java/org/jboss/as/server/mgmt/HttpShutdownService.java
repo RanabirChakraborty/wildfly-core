@@ -88,17 +88,14 @@ public class HttpShutdownService implements Service {
         trackerService.prepareShutdown();
         context.asynchronous();
         try {
-            executorSupplier.get().execute(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        // Wait for all mgmt requests to complete
-                        trackerService.awaitShutdown(SHUTDOWN_TIMEOUT, TIME_UNIT);
-                    } catch (InterruptedException e) {
-                        //
-                    } finally {
-                        context.complete();
-                    }
+            executorSupplier.get().execute(() -> {
+                try {
+                    // Wait for all mgmt requests to complete
+                    trackerService.awaitShutdown(SHUTDOWN_TIMEOUT, TIME_UNIT);
+                } catch (InterruptedException e) {
+                    //
+                } finally {
+                    context.complete();
                 }
             });
         } catch (RejectedExecutionException e) {

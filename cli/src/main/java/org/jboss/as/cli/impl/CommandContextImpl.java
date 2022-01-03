@@ -2143,15 +2143,11 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
         @Override
         public void handle(final Callback[] callbacks) throws IOException, UnsupportedCallbackException {
             try {
-                timeoutHandler.suspendAndExecute(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        try {
-                            dohandle(callbacks);
-                        } catch (IOException | UnsupportedCallbackException e) {
-                            throw new RuntimeException(e);
-                        }
+                timeoutHandler.suspendAndExecute(() -> {
+                    try {
+                        dohandle(callbacks);
+                    } catch (IOException | UnsupportedCallbackException e) {
+                        throw new RuntimeException(e);
                     }
                 });
             } catch (RuntimeException e) {
@@ -2432,15 +2428,11 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
                     connInfoBean.setServerCertificates(chain);
                 } catch (CertificateException ce) {
                     if (retry == false) {
-                        timeoutHandler.suspendAndExecute(new Runnable() {
-
-                            @Override
-                            public void run() {
-                                try {
-                                    handleSSLFailure(chain);
-                                } catch (CommandLineException | IOException e) {
-                                    throw new RuntimeException(e);
-                                }
+                        timeoutHandler.suspendAndExecute(() -> {
+                            try {
+                                handleSSLFailure(chain);
+                            } catch (CommandLineException | IOException e) {
+                                throw new RuntimeException(e);
                             }
                         });
 

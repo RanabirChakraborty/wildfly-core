@@ -75,6 +75,7 @@ public class ConnectDialog extends JInternalFrame {
     static final String TEXT_PASSWORD = "Password: ";
     static boolean IS_WIN;
     static boolean IS_GTK;
+
     static {
         String lafName = UIManager.getLookAndFeel().getClass().getName();
         IS_GTK = lafName.equals("com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
@@ -109,19 +110,15 @@ public class ConnectDialog extends JInternalFrame {
     }
 
     public void start() {
-        if(started){
+        if (started) {
             return;
         }
         // to update GUI...
         // SwingUtilities... does not work.
-        new Thread(new Runnable() {
-            public void run() {
-                inner_start();
-            }
-        }, "CLI GUI Connect Dialog").start();
+        new Thread(() -> inner_start(), "CLI GUI Connect Dialog").start();
     }
 
-    private void inner_start(){
+    private void inner_start() {
         //HACK, location needs to be set twice...
         targetDisplay.setVisible(false);
         targetDisplay.add(display);
@@ -250,7 +247,7 @@ public class ConnectDialog extends JInternalFrame {
 
 
         JPanel lc;
-        lc = new Labeled(TEXT_USERNAME,boldLabelFont, tfUserName);
+        lc = new Labeled(TEXT_USERNAME, boldLabelFont, tfUserName);
         userPwdPanel.add(lc);
 
         tfPassword = new JPasswordField(tfWidth);
@@ -275,11 +272,11 @@ public class ConnectDialog extends JInternalFrame {
         this.pack();
     }
 
-    private void clearStatus(){
+    private void clearStatus() {
         statusBar.setText(" ");
     }
 
-    private class UrlDocumentListener implements DocumentListener{
+    private class UrlDocumentListener implements DocumentListener {
 
         private static final String RX_PROTOCOL = "[A-Za-z\\-]+://";
         private static final String RX_HOST = "[1-9A-Za-z\\.]+";
@@ -309,33 +306,34 @@ public class ConnectDialog extends JInternalFrame {
             validateURL();
         }
 
-        private void validateURL(){
+        private void validateURL() {
             //more?
             final String text = textField.getText();
-            if(text == null || text.length() == 0){
+            if (text == null || text.length() == 0) {
                 clearStatus();
                 return;
             }
-            if(Pattern.matches(REGEXP, text)){
+            if (Pattern.matches(REGEXP, text)) {
                 clearStatus();
             } else {
                 statusBar.setText("Connection url is not correct.");
             }
         }
     }
-    private class Labeled extends JPanel{
+
+    private class Labeled extends JPanel {
         private final Component comp;
         private final JLabel leftLabel;
 
-        public Labeled(final String label, final Font font, final Component toBeLabeled){
+        public Labeled(final String label, final Font font, final Component toBeLabeled) {
             this.comp = toBeLabeled;
             this.leftLabel = new JLabel(label);
-            if(font!=null)
+            if (font != null)
                 this.leftLabel.setFont(font);
 
-            super.setLayout(new BorderLayout(6,6));
-            super.add(leftLabel,BorderLayout.WEST);
-            super.add(comp,BorderLayout.CENTER);
+            super.setLayout(new BorderLayout(6, 6));
+            super.add(leftLabel, BorderLayout.WEST);
+            super.add(comp, BorderLayout.CENTER);
         }
     }
 }

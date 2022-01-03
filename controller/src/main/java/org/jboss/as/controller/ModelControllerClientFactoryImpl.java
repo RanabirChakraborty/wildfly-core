@@ -200,32 +200,30 @@ final class ModelControllerClientFactoryImpl implements ModelControllerClientFac
             final SecurityIdentity securityIdentity = securityIdentitySupplier.get();
             final boolean inVmCall = SecurityActions.isInVmCall();
 
-            executor.execute(new Runnable() {
-                public void run() {
-                    try {
-                        if (opThread.compareAndSet(null, Thread.currentThread())) {
-                            OperationResponse response;
-                            if (forUserCalls) {
-                                // We need the AccessAuditContext as that will make any inflowed SecurityIdentity available.
-                                response = AccessAuditContext.doAs(securityIdentity, null, new PrivilegedAction<OperationResponse>() {
+            executor.execute(() -> {
+                try {
+                    if (opThread.compareAndSet(null, Thread.currentThread())) {
+                        OperationResponse response;
+                        if (forUserCalls) {
+                            // We need the AccessAuditContext as that will make any inflowed SecurityIdentity available.
+                            response = AccessAuditContext.doAs(securityIdentity, null, new PrivilegedAction<OperationResponse>() {
 
-                                    @Override
-                                    public OperationResponse run() {
-                                        SecurityActions.currentAccessAuditContext().setAccessMechanism(AccessMechanism.IN_VM_USER);
-                                        return runOperation(operation, messageHandler, attachments, inVmCall);
-                                    }
-                                });
-                            } else {
-                                response = runOperation(operation, messageHandler, attachments, inVmCall);
-                            }
-                            responseFuture.handleResult(response);
+                                @Override
+                                public OperationResponse run() {
+                                    SecurityActions.currentAccessAuditContext().setAccessMechanism(AccessMechanism.IN_VM_USER);
+                                    return runOperation(operation, messageHandler, attachments, inVmCall);
+                                }
+                            });
+                        } else {
+                            response = runOperation(operation, messageHandler, attachments, inVmCall);
                         }
-                    } finally {
-                        synchronized (opThread) {
-                            opThread.set(null);
-                            threads.remove(opThread);
-                            opThread.notifyAll();
-                        }
+                        responseFuture.handleResult(response);
+                    }
+                } finally {
+                    synchronized (opThread) {
+                        opThread.set(null);
+                        threads.remove(opThread);
+                        opThread.notifyAll();
                     }
                 }
             });

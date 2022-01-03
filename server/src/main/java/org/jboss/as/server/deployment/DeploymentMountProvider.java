@@ -134,23 +134,20 @@ public interface DeploymentMountProvider {
 
             @Override
             public void stop(final StopContext context) {
-                Runnable r = new Runnable() {
-                    @Override
-                    public void run() {
+                Runnable r = () -> {
+                    try {
+                        deploymentMountProviderConsumer.accept(null);
+                        VFSUtils.safeClose(tempFileProvider);
+                    } finally {
                         try {
-                            deploymentMountProviderConsumer.accept(null);
-                            VFSUtils.safeClose(tempFileProvider);
-                        } finally {
-                            try {
-                                ScheduledExecutorService ses = scheduledExecutorService;
-                                scheduledExecutorService = null;
-                                if (ses != null) {
-                                    ses.shutdown();
-                                }
-                                ServerLogger.ROOT_LOGGER.debugf("%s stopped", DeploymentMountProvider.class.getSimpleName());
-                            } finally {
-                                context.complete();
+                            ScheduledExecutorService ses = scheduledExecutorService;
+                            scheduledExecutorService = null;
+                            if (ses != null) {
+                                ses.shutdown();
                             }
+                            ServerLogger.ROOT_LOGGER.debugf("%s stopped", DeploymentMountProvider.class.getSimpleName());
+                        } finally {
+                            context.complete();
                         }
                     }
                 };

@@ -116,17 +116,14 @@ public abstract class AbstractModelControllerOperationHandlerFactoryService impl
     public synchronized void stop(final StopContext stopContext) {
         serviceConsumer.accept(null);
         final ExecutorService executorService = executorSupplier.get();
-        final Runnable task = new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    responseAttachmentSupport.shutdown();
-                    // Shut down new requests to the client request executor,
-                    // but don't mess with currently running tasks
-                    clientRequestExecutor.shutdown();
-                } finally {
-                    stopContext.complete();
-                }
+        final Runnable task = () -> {
+            try {
+                responseAttachmentSupport.shutdown();
+                // Shut down new requests to the client request executor,
+                // but don't mess with currently running tasks
+                clientRequestExecutor.shutdown();
+            } finally {
+                stopContext.complete();
             }
         };
         try {

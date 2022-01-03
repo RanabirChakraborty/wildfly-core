@@ -80,14 +80,11 @@ public class HostControllerClient implements AbstractControllerService.Controlle
         // Create and cache the objects that will send any controller instability requests
         // in order to increase the potential that it will execute in low memory situations
         final ControllerInstabilityNotificationRequest request = new ControllerInstabilityNotificationRequest();
-        this.unstableNotificationRunnable = new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    channelHandler.executeRequest(request, null);
-                } catch (Throwable t) {
-                    // not much we can do. Likely an OOME
-                }
+        this.unstableNotificationRunnable = () -> {
+            try {
+                channelHandler.executeRequest(request, null);
+            } catch (Throwable t) {
+                // not much we can do. Likely an OOME
             }
         };
     }

@@ -664,15 +664,12 @@ public final class ServerService extends AbstractControllerService {
 
         @Override
         public synchronized void stop(final StopContext context) {
-            Runnable r = new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        scheduledExecutorService.shutdown();
-                    } finally {
-                        scheduledExecutorService = null;
-                        context.complete();
-                    }
+            Runnable r = () -> {
+                try {
+                    scheduledExecutorService.shutdown();
+                } finally {
+                    scheduledExecutorService = null;
+                    context.complete();
                 }
             };
             try {

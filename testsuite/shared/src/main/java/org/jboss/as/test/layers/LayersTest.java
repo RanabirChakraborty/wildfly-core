@@ -161,50 +161,47 @@ public class LayersTest {
     private static void checkExecution(ExecutorService executor,
             Path installation) throws Exception {
         StringBuilder str = new StringBuilder();
-        Runnable r = new Runnable() {
-            @Override
-            public void run() {
+        Runnable r = () -> {
+            try {
+                StandaloneCommandBuilder builder = StandaloneCommandBuilder.of(installation);
+                String localRepo = System.getProperty(MAVEN_REPO_LOCAL);
+                if (localRepo != null) {
+                    builder.addJavaOption("-D" + MAVEN_REPO_LOCAL + "=" + localRepo);
+                } else {
+                    System.out.println("Warning, no Maven local repository set.");
+                }
+                ProcessBuilder p = new ProcessBuilder(builder.build());
+                p.redirectErrorStream(true);
+                Process process = p.start();
                 try {
-                    StandaloneCommandBuilder builder = StandaloneCommandBuilder.of(installation);
-                    String localRepo = System.getProperty(MAVEN_REPO_LOCAL);
-                    if (localRepo != null) {
-                        builder.addJavaOption("-D" + MAVEN_REPO_LOCAL + "=" + localRepo);
-                    } else {
-                        System.out.println("Warning, no Maven local repository set.");
-                    }
-                    ProcessBuilder p = new ProcessBuilder(builder.build());
-                    p.redirectErrorStream(true);
-                    Process process = p.start();
-                    try {
-                        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-                        String line;
-                        boolean ended = false;
-                        while ((line = reader.readLine()) != null) {
-                            str.append(line).append("\n");
-                            // We are only checking for server view on errors.
-                            // Some other errors could occur (eg: multicast load-balancer on some platforms)
-                            // but these errors are not caused by server configuration.
-                            if (line.contains(END_LOG_FAILURE)) {
-                                throw new Exception("Process for " + installation.getFileName() +
-                                    " started with errors.");
-                            } else {
-                                if (line.contains(END_LOG_SUCCESS)) {
-                                    ended = true;
-                                    break;
-                                }
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                    String line;
+                    boolean ended = false;
+                    while ((line = reader.readLine()) != null) {
+                        str.append(line).append("\n");
+                        // We are only checking for server view on errors.
+                        // Some other errors could occur (eg: multicast load-balancer on some platforms)
+                        // but these errors are not caused by server configuration.
+                        if (line.contains(END_LOG_FAILURE)) {
+                            throw new Exception("Process for " + installation.getFileName() +
+                                " started with errors.");
+                        } else {
+                            if (line.contains(END_LOG_SUCCESS)) {
+                                ended = true;
+                                break;
                             }
                         }
-                        if (!ended) {
-                            throw new Exception("Process for " + installation.getFileName() +
-                                    " not terminated properly.");
-                        }
-                    } finally {
-                        process.destroyForcibly();
-                        process.waitFor();
                     }
-                } catch (Exception ex) {
-                    throw new RuntimeException(ex);
+                    if (!ended) {
+                        throw new Exception("Process for " + installation.getFileName() +
+                                " not terminated properly.");
+                    }
+                } finally {
+                    process.destroyForcibly();
+                    process.waitFor();
                 }
+            } catch (Exception ex) {
+                throw new RuntimeException(ex);
             }
         };
         try {

@@ -249,11 +249,7 @@ public final class Main {
         processController.addProcess(HOST_CONTROLLER_PROCESS_NAME, initialCommand, Collections.<String, String>emptyMap(), currentWorkingDir, true, true);
         processController.startProcess(HOST_CONTROLLER_PROCESS_NAME);
 
-        final Thread shutdownThread = new Thread(new Runnable() {
-            public void run() {
-                processController.shutdown();
-            }
-        }, "Shutdown thread");
+        final Thread shutdownThread = new Thread(() -> processController.shutdown(), "Shutdown thread");
         shutdownThread.setDaemon(false);
         Runtime.getRuntime().addShutdownHook(shutdownThread);
 

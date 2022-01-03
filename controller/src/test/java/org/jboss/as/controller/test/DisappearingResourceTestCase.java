@@ -173,20 +173,17 @@ public class DisappearingResourceTestCase extends AbstractControllerTestBase {
         op.get(RECURSIVE).set(true);
         op.get(INCLUDE_RUNTIME).set(true);
 
-        Runnable r = new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    attributeInLatch.await(300, TimeUnit.SECONDS);
-                    discardParent = true;
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new RuntimeException(e);
-                } finally {
-                    attributeOutLatch.countDown();
-                }
-
+        Runnable r = () -> {
+            try {
+                attributeInLatch.await(300, TimeUnit.SECONDS);
+                discardParent = true;
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
+            } finally {
+                attributeOutLatch.countDown();
             }
+
         };
         Thread t = new Thread(r);
         t.start();
@@ -248,20 +245,17 @@ public class DisappearingResourceTestCase extends AbstractControllerTestBase {
         op.get(RECURSIVE).set(true);
         op.get(INCLUDE_RUNTIME).set(true);
 
-        Runnable r = new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    attributeInLatch.await(300, TimeUnit.SECONDS);
-                    discardParent = true;
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new RuntimeException(e);
-                } finally {
-                    attributeOutLatch.countDown();
-                }
-
+        Runnable r = () -> {
+            try {
+                attributeInLatch.await(300, TimeUnit.SECONDS);
+                discardParent = true;
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
+            } finally {
+                attributeOutLatch.countDown();
             }
+
         };
         Thread t = new Thread(r);
         t.start();

@@ -64,25 +64,14 @@ public class TestUndertowService implements Service<TestUndertowService> {
                 System.out.println("Attempting " + count + " " + exchange);
                 RunResult result = controlPoint.beginRequest();
                 if (result == RunResult.REJECTED) {
-                    exchange.dispatch(new Runnable() {
-                        @Override
-                        public void run() {
-                            controlPoint.queueTask(new Runnable() {
-                                @Override
-                                public void run() {
-                                    exchange.addExchangeCompleteListener(exchangeCompletionListener);
-                                    exchange.dispatch(suspendResumeHandler);
-                                }
-                            }, exchange.getIoThread(), 1000, new Runnable() {
-                                @Override
-                                public void run() {
-                                    System.out.println("Rejected " + count + " " + exchange);
-                                    exchange.setStatusCode(503);
-                                    exchange.endExchange();
-                                }
-                            }, true);
-                        }
-                    });
+                    exchange.dispatch(() -> controlPoint.queueTask(() -> {
+                        exchange.addExchangeCompleteListener(exchangeCompletionListener);
+                        exchange.dispatch(suspendResumeHandler);
+                    }, exchange.getIoThread(), 1000, () -> {
+                        System.out.println("Rejected " + count + " " + exchange);
+                        exchange.setStatusCode(503);
+                        exchange.endExchange();
+                    }, true));
 
                     return;
                 }

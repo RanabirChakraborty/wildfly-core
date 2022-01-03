@@ -114,33 +114,30 @@ public abstract class AbstractChannelOpenListenerService implements Service, Ope
         for (final ManagementChannelShutdownHandle handle : handlesCopy) {
             handle.shutdown();
         }
-        final Runnable shutdownTask = new Runnable() {
-            @Override
-            public void run() {
-                final long end = System.currentTimeMillis() + CHANNEL_SHUTDOWN_TIMEOUT;
-                boolean interrupted = Thread.currentThread().isInterrupted();
-                try {
-                    for (final ManagementChannelShutdownHandle handle : handlesCopy) {
-                        final long remaining = end - System.currentTimeMillis();
-                        try {
-                            if (!interrupted && !handle.awaitCompletion(remaining, TimeUnit.MILLISECONDS)) {
-                                ControllerLogger.ROOT_LOGGER.gracefulManagementChannelHandlerShutdownTimedOut(CHANNEL_SHUTDOWN_TIMEOUT);
-                            }
-                            trackerService.unregisterTracker(handle);
-                        } catch (InterruptedException e) {
-                            interrupted = true;
-                            ControllerLogger.ROOT_LOGGER.gracefulManagementChannelHandlerShutdownFailed(e);
-                        } catch (Exception e) {
-                            ControllerLogger.ROOT_LOGGER.gracefulManagementChannelHandlerShutdownFailed(e);
-                        } finally {
-                            handle.shutdownNow();
+        final Runnable shutdownTask = () -> {
+            final long end = System.currentTimeMillis() + CHANNEL_SHUTDOWN_TIMEOUT;
+            boolean interrupted = Thread.currentThread().isInterrupted();
+            try {
+                for (final ManagementChannelShutdownHandle handle : handlesCopy) {
+                    final long remaining = end - System.currentTimeMillis();
+                    try {
+                        if (!interrupted && !handle.awaitCompletion(remaining, TimeUnit.MILLISECONDS)) {
+                            ControllerLogger.ROOT_LOGGER.gracefulManagementChannelHandlerShutdownTimedOut(CHANNEL_SHUTDOWN_TIMEOUT);
                         }
+                        trackerService.unregisterTracker(handle);
+                    } catch (InterruptedException e) {
+                        interrupted = true;
+                        ControllerLogger.ROOT_LOGGER.gracefulManagementChannelHandlerShutdownFailed(e);
+                    } catch (Exception e) {
+                        ControllerLogger.ROOT_LOGGER.gracefulManagementChannelHandlerShutdownFailed(e);
+                    } finally {
+                        handle.shutdownNow();
                     }
-                } finally {
-                    context.complete();
-                    if (interrupted) {
-                        Thread.currentThread().interrupt();
-                    }
+                }
+            } finally {
+                context.complete();
+                if (interrupted) {
+                    Thread.currentThread().interrupt();
                 }
             }
         };

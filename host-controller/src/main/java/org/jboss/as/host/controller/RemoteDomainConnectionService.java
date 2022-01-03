@@ -624,15 +624,12 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
     /** {@inheritDoc} */
     @Override
     public synchronized void stop(final StopContext context) {
-        Runnable r = new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    StreamUtils.safeClose(connection);
-                    responseAttachmentSupport.shutdown();
-                } finally {
-                    context.complete();
-                }
+        Runnable r = () -> {
+            try {
+                StreamUtils.safeClose(connection);
+                responseAttachmentSupport.shutdown();
+            } finally {
+                context.complete();
             }
         };
         try {

@@ -170,16 +170,13 @@ public class ExplodedDeploymentAddContentHandler implements OperationStepHandler
         Path runtimeDeployedPath = DeploymentHandlerUtil.getExplodedDeploymentRoot(serverEnvironment, managementName);
         if (Files.exists(runtimeDeployedPath)) {
             result = new CountDownLatch(1);
-            Runnable r = new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        contentRepository.copyExplodedContentFiles(newHash, relativePaths, runtimeDeployedPath);
-                    } catch (ExplodedContentException ex) {
-                        ServerLogger.DEPLOYMENT_LOGGER.couldNotCopyFiles(ex, managementName);
-                    } finally {
-                        result.countDown();
-                    }
+            Runnable r = () -> {
+                try {
+                    contentRepository.copyExplodedContentFiles(newHash, relativePaths, runtimeDeployedPath);
+                } catch (ExplodedContentException ex) {
+                    ServerLogger.DEPLOYMENT_LOGGER.couldNotCopyFiles(ex, managementName);
+                } finally {
+                    result.countDown();
                 }
             };
             executor.submit(r);

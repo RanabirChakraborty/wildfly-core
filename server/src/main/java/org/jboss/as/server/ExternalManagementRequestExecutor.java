@@ -130,15 +130,12 @@ public class ExternalManagementRequestExecutor implements Service<ExecutorServic
     public synchronized void stop(final StopContext context) {
 
         if (executorService != null) {
-            Runnable r = new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        executorService.shutdown();
-                    } finally {
-                        executorService = null;
-                        context.complete();
-                    }
+            Runnable r = () -> {
+                try {
+                    executorService.shutdown();
+                } finally {
+                    executorService = null;
+                    context.complete();
                 }
             };
             final ExecutorService executorService = injectedExecutor.getValue();

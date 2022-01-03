@@ -417,31 +417,29 @@ public abstract class AbstractControllerService implements Service<ModelControll
         this.processState.setStarting();
 
         final long bootStackSize = getBootStackSize();
-        final Thread bootThread = new Thread(null, new Runnable() {
-            public void run() {
+        final Thread bootThread = new Thread(null, () -> {
+            try {
                 try {
-                    try {
-                        boot(new BootContext() {
-                            public ServiceTarget getServiceTarget() {
-                                return target;
-                            }
-                        });
-                    } finally {
-                        processState.setRunning();
-                    }
-                    postBoot();
-                } catch (Throwable t) {
-                    container.shutdown();
-                    if (t instanceof StackOverflowError) {
-                        ROOT_LOGGER.errorBootingContainer(t, bootStackSize, BOOT_STACK_SIZE_PROPERTY);
-                    } else {
-                        ROOT_LOGGER.errorBootingContainer(t);
-                    }
+                    boot(new BootContext() {
+                        public ServiceTarget getServiceTarget() {
+                            return target;
+                        }
+                    });
                 } finally {
-                    bootThreadDone();
+                    processState.setRunning();
                 }
-
+                postBoot();
+            } catch (Throwable t) {
+                container.shutdown();
+                if (t instanceof StackOverflowError) {
+                    ROOT_LOGGER.errorBootingContainer(t, bootStackSize, BOOT_STACK_SIZE_PROPERTY);
+                } else {
+                    ROOT_LOGGER.errorBootingContainer(t);
+                }
+            } finally {
+                bootThreadDone();
             }
+
         }, "Controller Boot Thread", bootStackSize);
         bootThread.start();
     }
@@ -632,17 +630,14 @@ public abstract class AbstractControllerService implements Service<ModelControll
         controller = null;
         stabilityMonitor = null;
         processState.setStopping();
-        Runnable r = new Runnable() {
-            @Override
-            public void run() {
+        Runnable r = () -> {
+            try {
+                stopAsynchronous(context);
+            } finally {
                 try {
-                    stopAsynchronous(context);
+                    authorizer.shutdown();
                 } finally {
-                    try {
-                        authorizer.shutdown();
-                    } finally {
-                        context.complete();
-                    }
+                    context.complete();
                 }
             }
         };
